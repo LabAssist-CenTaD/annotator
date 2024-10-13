@@ -58,7 +58,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         Your browser does not support the video tag.
       </video>
 
-      <div className="flex items-center mt-2 space-x-2">
+      <div className="flex flex-row justify-center items-center mt-2 space-x-2">
         {" "}
         {/* Flexbox for buttons */}
         <Button
