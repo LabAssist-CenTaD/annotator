@@ -36,11 +36,25 @@ const App = () => {
         accept="video/mp4" // Optional: limit to mp4 files
       />
 
-      <Button color="green">Correct</Button>
-      <Button color="red">Incorrect</Button>
-      <Button color="gray">Stationary</Button>
-      <Button color="blue">Reject</Button>
-      <Button color="blue">Back</Button>
+      <Button color="green" keyBind="1" onClick={() => console.log("Correct")}>
+        Correct
+      </Button>
+      <Button color="red" keyBind="2" onClick={() => console.log("Incorrect")}>
+        Incorrect
+      </Button>
+      <Button
+        color="gray"
+        keyBind="3"
+        onClick={() => console.log("Stationary")}
+      >
+        Stationary
+      </Button>
+      <Button color="blue" keyBind="4" onClick={() => console.log("Reject")}>
+        Reject
+      </Button>
+      <Button color="blue" keyBind="5" onClick={() => console.log("Back")}>
+        Back
+      </Button>
     </div>
   );
 };
