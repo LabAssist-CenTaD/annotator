@@ -3,10 +3,15 @@ import Button from "./Button";
 
 interface VideoPlayerProps {
   videoUrl: string | null;
+  onVideoUrlChange: (url: string | null) => void; // Add prop to handle video URL change
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl }) => {
+const VideoPlayer: React.FC<VideoPlayerProps> = ({
+  videoUrl,
+  onVideoUrlChange,
+}) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null); // Ref for file input
 
   // Clean up URL when video URL changes
   useEffect(() => {
@@ -16,6 +21,17 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl }) => {
       }
     };
   }, [videoUrl]);
+
+  // Function to handle file selection
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files[0]) {
+      const file = files[0]; // Get the selected file
+      const url = URL.createObjectURL(file); // Create a URL for the uploaded file
+      onVideoUrlChange(url); // Call the prop function to update the video URL in App
+      console.log("Uploaded file:", file.name); // Log the file name
+    }
+  };
 
   // Function to log the current timestamp of the video
   const logVideoTimestamp = () => {
@@ -41,9 +57,28 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl }) => {
         )}
         Your browser does not support the video tag.
       </video>
-      <Button color="blue" keyBind="l" onClick={logVideoTimestamp}>
-        <b>L</b> Log Video Timestamp
-      </Button>
+
+      <div className="flex items-center mt-2 space-x-2">
+        {" "}
+        {/* Flexbox for buttons */}
+        <Button
+          color="blue"
+          keyBind="u"
+          onClick={() => fileInputRef.current?.click()} // Trigger file input click
+        >
+          <b>U</b> Upload
+        </Button>
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileUpload}
+          style={{ display: "none" }} // Hide the file input
+          accept="video/mp4" // Optional: limit to mp4 files
+        />
+        <Button color="blue" keyBind="l" onClick={logVideoTimestamp}>
+          <b>L</b> Log Video Timestamp
+        </Button>
+      </div>
     </div>
   );
 };
