@@ -24,8 +24,15 @@ const App = () => {
       <VideoPlayer videoUrl={videoUrl} />
 
       {/* Buttons */}
-      <Button color="blue" onClick={() => fileInputRef.current?.click()}>
-        Upload
+      <Button
+        color="blue"
+        keyBind="u"
+        onClick={() => {
+          fileInputRef.current?.click();
+          console.log("Upload");
+        }}
+      >
+        <b>U</b> Upload
       </Button>
 
       <input
@@ -37,23 +44,23 @@ const App = () => {
       />
 
       <Button color="green" keyBind="1" onClick={() => console.log("Correct")}>
-        Correct
+        <b>1</b> Correct
       </Button>
       <Button color="red" keyBind="2" onClick={() => console.log("Incorrect")}>
-        Incorrect
+        <b>2</b> Incorrect
       </Button>
       <Button
         color="gray"
         keyBind="3"
         onClick={() => console.log("Stationary")}
       >
-        Stationary
+        <b>3</b> Stationary
       </Button>
       <Button color="blue" keyBind="4" onClick={() => console.log("Reject")}>
-        Reject
+        <b>4</b> Reject
       </Button>
       <Button color="blue" keyBind="5" onClick={() => console.log("Back")}>
-        Back
+        <b>5</b> Back
       </Button>
     </div>
   );
