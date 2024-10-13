@@ -7,10 +7,10 @@ const App = () => {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   return (
-    <div className="flex flex-col items-center justify-center space-y-4 my-8">
+    <div className="flex flex-col items-center justify-center space-y-8 my-8">
       {/* Video Player with Upload Button */}
       <VideoPlayer videoUrl={videoUrl} onVideoUrlChange={setVideoUrl} />
-      <div className="space-x-2">
+      <div className="space-x-2 p-2 border-2 border-gray-300 rounded-xl">
         {/* Other Buttons */}
         <Button color="green" keyBind="1">
           <b>1</b> Correct
