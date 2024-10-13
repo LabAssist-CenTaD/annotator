@@ -41,8 +41,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoUrl }) => {
         )}
         Your browser does not support the video tag.
       </video>
-      <Button color="blue" onClick={logVideoTimestamp}>
-        Log Video Timestamp
+      <Button color="blue" keyBind="l" onClick={logVideoTimestamp}>
+        <b>L</b> Log Video Timestamp
       </Button>
     </div>
   );

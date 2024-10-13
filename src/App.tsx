@@ -27,10 +27,7 @@ const App = () => {
       <Button
         color="blue"
         keyBind="u"
-        onClick={() => {
-          fileInputRef.current?.click();
-          console.log("Upload");
-        }}
+        onClick={() => fileInputRef.current?.click()}
       >
         <b>U</b> Upload
       </Button>
@@ -43,23 +40,19 @@ const App = () => {
         accept="video/mp4" // Optional: limit to mp4 files
       />
 
-      <Button color="green" keyBind="1" onClick={() => console.log("Correct")}>
+      <Button color="green" keyBind="1">
         <b>1</b> Correct
       </Button>
-      <Button color="red" keyBind="2" onClick={() => console.log("Incorrect")}>
+      <Button color="red" keyBind="2">
         <b>2</b> Incorrect
       </Button>
-      <Button
-        color="gray"
-        keyBind="3"
-        onClick={() => console.log("Stationary")}
-      >
+      <Button color="gray" keyBind="3">
         <b>3</b> Stationary
       </Button>
-      <Button color="blue" keyBind="4" onClick={() => console.log("Reject")}>
+      <Button color="blue" keyBind="4">
         <b>4</b> Reject
       </Button>
-      <Button color="blue" keyBind="5" onClick={() => console.log("Back")}>
+      <Button color="blue" keyBind="5">
         <b>5</b> Back
       </Button>
     </div>
