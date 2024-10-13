@@ -1,14 +1,7 @@
-import Message from './message';
+import ListGroup from "./components/ListGroup";
 
 function App() {
-  const name = 'wattesigma';
-  if (name)
-    return (
-      <div>
-        <h1>Hello {name}</h1>
-      </div>
-    );
-  return <Message />;
+  return <div><ListGroup /></div>
 }
 
 export default App;
