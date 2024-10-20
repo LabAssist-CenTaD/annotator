@@ -9,7 +9,7 @@ CORS(app)  # Enable CORS to allow requests from your React app
 @app.route('/annotate', methods=['POST'])
 def annotate_video():
     if 'video' not in request.files:
-        return jsonify({'error': 'No video uploaded'}), 400
+        return jsonify({'error': 'Flask: No video uploaded'}), 400
 
     video = request.files['video']
 
@@ -18,7 +18,7 @@ def annotate_video():
     video.save(video_path)
 
     # Add your annotation logic here (for now, just return a success message)
-    return jsonify({'message': 'Video annotated successfully'}), 200
+    return jsonify({'message': 'Flask: Video recieved successfully'}), 200
 
 # Run the Flask app
 if __name__ == '__main__':

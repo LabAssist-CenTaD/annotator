@@ -1,10 +1,16 @@
 import React, { useRef, useEffect, useState } from "react";
 import Button from "./Button";
-import axios from "axios"; // Import axios for making HTTP requests
+import axios, { AxiosError, isAxiosError } from "axios"; // Import AxiosError and isAxiosError from the correct path
 
 interface VideoPlayerProps {
   videoUrl: string | null;
   onVideoUrlChange: (url: string | null) => void; // Prop to handle video URL change
+}
+
+// Define the expected structure of the response from the Flask server
+interface FlaskResponse {
+  message?: string; // Message from the server
+  error?: string; // Error message, if any
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -47,7 +53,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     formData.append("video", selectedFile);
 
     try {
-      const response = await axios.post(
+      const response = await axios.post<FlaskResponse>(
         "http://localhost:5000/annotate",
         formData,
         {
@@ -57,10 +63,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         }
       );
       console.log("Response from Flask:", response.data);
-      alert("File sent successfully!");
+      alert(response.data.message || "File sent successfully!"); // Display success message from Flask
     } catch (error) {
       console.error("Error sending file to Flask:", error);
-      alert("Failed to send file.");
+      const axiosError = error as AxiosError; // Cast to AxiosError
+      const errorMessage =
+        isAxiosError(axiosError) && axiosError.response?.data?.error
+          ? axiosError.response.data.error
+          : "Failed to send file."; // Default error message
+      alert(errorMessage);
     }
   };
 
@@ -90,7 +101,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       </video>
 
       <div className="flex flex-row justify-center items-center mt-2 space-x-2">
-        {" "}
         {/* Flexbox for buttons */}
         <Button
           color="blue"
