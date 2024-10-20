@@ -25,3 +25,6 @@ dist-ssr
 
 # Ignore uploads directory
 video-splitter/uploads/
+
+# Ignore virtual environment
+venv/
