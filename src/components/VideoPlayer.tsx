@@ -1,9 +1,10 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import Button from "./Button";
+import axios from "axios"; // Import axios for making HTTP requests
 
 interface VideoPlayerProps {
   videoUrl: string | null;
-  onVideoUrlChange: (url: string | null) => void; // Add prop to handle video URL change
+  onVideoUrlChange: (url: string | null) => void; // Prop to handle video URL change
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -12,6 +13,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null); // Ref for file input
+  const [selectedFile, setSelectedFile] = useState<File | null>(null); // State to hold the selected file
 
   // Clean up URL when video URL changes
   useEffect(() => {
@@ -28,8 +30,37 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     if (files && files[0]) {
       const file = files[0]; // Get the selected file
       const url = URL.createObjectURL(file); // Create a URL for the uploaded file
-      onVideoUrlChange(url); // Call the prop function to update the video URL in App
+      setSelectedFile(file); // Store the selected file for later
+      onVideoUrlChange(url); // Call the prop function to update the video URL
       console.log("Uploaded file:", file.name); // Log the file name
+    }
+  };
+
+  // Function to send the file to the Flask backend
+  const sendFileToPython = async () => {
+    if (!selectedFile) {
+      alert("No file selected!");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("video", selectedFile);
+
+    try {
+      const response = await axios.post(
+        "http://localhost:5000/annotate",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      console.log("Response from Flask:", response.data);
+      alert("File sent successfully!");
+    } catch (error) {
+      console.error("Error sending file to Flask:", error);
+      alert("Failed to send file.");
     }
   };
 
@@ -77,6 +108,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         />
         <Button color="blue" keyBind="l" onClick={logVideoTimestamp}>
           <b>L</b> Log Video Timestamp
+        </Button>
+        <Button color="green" onClick={sendFileToPython}>
+          Send File to Python
         </Button>
       </div>
     </div>
