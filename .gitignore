@@ -27,4 +27,5 @@ dist-ssr
 video-splitter/uploads/
 
 # Ignore virtual environment
+.venv/
 venv/

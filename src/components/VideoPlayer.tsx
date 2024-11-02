@@ -54,7 +54,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     try {
       const response = await axios.post<FlaskResponse>(
-        "http://localhost:5000/annotate",
+        "http://localhost:5000/upload",
         formData,
         {
           headers: {
