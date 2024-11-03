@@ -65,10 +65,20 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       console.log("Response from Flask:", response.data);
       alert(response.data.message || "File sent successfully!");
 
-      // Update the video URL to the first clip if available
+      // Fetch the first clip as byte data
       if (response.data.clip_paths && response.data.clip_paths.length > 0) {
-        const newVideoUrl = `http://localhost:5000/${response.data.clip_paths[0]}`;
-        onVideoUrlChange(newVideoUrl); // Set videoUrl to the first clip
+        const clipName = response.data.clip_paths[0].split("/").pop(); // Extract only the clip name
+        const clipResponse = await axios.get(
+          `http://localhost:5000/get_clip_data/${clipName}`,
+          {
+            responseType: "blob",
+          }
+        );
+
+        const videoBlob = new Blob([clipResponse.data as BlobPart], { type: "video/mp4" });
+        const newVideoUrl = URL.createObjectURL(videoBlob);
+
+        onVideoUrlChange(newVideoUrl); // Set videoUrl to the new blob URL
         if (videoRef.current) {
           videoRef.current.src = newVideoUrl; // Update the source directly
           videoRef.current.load(); // Load the new video source

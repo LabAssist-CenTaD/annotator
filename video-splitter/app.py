@@ -47,18 +47,15 @@ def upload_video() -> Response:
     else:
         return jsonify({'error': 'Flask: Error processing video'}), 500
     
-# Route to handle clip retrieval
-@app.route('/get_clip', methods=['GET'])
-def get_clip() -> Response:
-    if 'clip_name' not in request.args:
-        return jsonify({'error': 'Flask: No clip name provided'}), 400
-    clip_name = request.args['clip_name']
+# New endpoint to serve video clips as byte data
+@app.route('/get_clip_data/<clip_name>', methods=['GET'])
+def get_clip_data(clip_name):
     clip_path = os.path.join('uploads', clip_name)
     if not os.path.exists(clip_path):
         return jsonify({'error': 'Flask: Clip not found'}), 404
     with open(clip_path, 'rb') as f:
-        clip = f.read()
-    return Response(clip, mimetype='video/mp4')
+        clip_data = f.read()
+    return Response(clip_data, mimetype='video/mp4')
     
 def process_video(video:bytes | str, interval:int):
     # reads the video and separates it into clips of interval seconds. Crops the videos based on the object detection model
