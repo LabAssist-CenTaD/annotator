@@ -1,11 +1,18 @@
-from moviepy.editor import VideoFileClip
+from ultralytics.models.yolo import YOLO
 from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
+from object_detector import pad_and_resize, predict_on_clips, get_valid_flask, square_crop, save_clips_as_mp4, extract_clips
+import numpy as np
+import tempfile
+import math
+import cv2
 import os
 import io
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS to allow requests from your React app
+
+model = YOLO('video-splitter/models/obj_detect_best_v5.pt', verbose = False).cpu()
 
 # Route to handle video uploads and annotation logic
 @app.route('/upload', methods=['POST']) 
@@ -14,48 +21,57 @@ def upload_video() -> Response:
         return jsonify({'error': 'Flask: No video uploaded'}), 400
 
     video = request.files['video']
-    video_bytes = io.BytesIO(video.read())
-    video_clip = VideoFileClip(video_bytes)
-    duration = video_clip.duration
-
-    # # Save the uploaded video to a directory (optional)
-    # video_path = os.path.join('uploads', video.filename)
-
-    # video.save(video_path)
+    video_name = video.filename
+    print(video_name)
+    # Read the video file as bytes
+    video_bytes = video.read()
+    clips, fps = process_video(video_bytes, 6)
+    if save_clips_as_mp4('uploads', clips, base_name=video_name[:-4], fps=fps):
+        return jsonify({'message': 'Flask: Video processed successfully'}), 200
+    else:
+        return jsonify({'error': 'Flask: Error processing video'}), 500
     
-    video_timestamps = split_video_timestamps(duration, 6)
-    if video_timestamps is None:
-        return jsonify({'error': 'Flask: Video duration is less than 6 seconds'}), 400
-
-    # Add your annotation logic here (for now, just return a success message)
-    return jsonify(
-        {
-            'message': 'Flask: Video recieved successfully',
-            'video_duration': duration,
-            'video_timestamps': video_timestamps,
-        }), 200
-
-# Splits the video into multiple clips of x seconds each and returns the timestamps.
-def split_video_timestamps(total_duration: float, clip_duration: float) -> list[tuple[float, float]]:
-    if total_duration < clip_duration:
-        return None
-
-    timestamps = []
-    start_time = 0
-    end_time = clip_duration
+# Route to handle clip retrieval
+@app.route('/get_clip', methods=['GET'])
+def get_clip() -> Response:
+    if 'clip_name' not in request.args:
+        return jsonify({'error': 'Flask: No clip name provided'}), 400
+    clip_name = request.args['clip_name']
+    clip_path = os.path.join('uploads', clip_name)
+    if not os.path.exists(clip_path):
+        return jsonify({'error': 'Flask: Clip not found'}), 404
+    with open(clip_path, 'rb') as f:
+        clip = f.read()
+    return Response(clip, mimetype='video/mp4')
     
-    while end_time <= total_duration:
-        timestamps.append((start_time, end_time))
-        start_time = end_time
-        end_time += clip_duration
-        
-    if end_time > total_duration:
-        timestamps.append((total_duration - clip_duration, total_duration))
-        
-    return timestamps
-
+def process_video(video:bytes | str, interval:int):
+    # reads the video and separates it into clips of interval seconds. Crops the videos based on the object detection model
+    extracted_clips, fps = extract_clips(video, interval, transform=pad_and_resize)
+    
+    preds = predict_on_clips(extracted_clips, model)
+    
+    cropped_clips = []
+    for i, pred in enumerate(preds):
+        flask_box = get_valid_flask(pred)
+        if flask_box is not None:
+            cropped_clip = []
+            for frame in extracted_clips[i]:
+                cropped_clip.append(square_crop(frame, flask_box))
+            cropped_clips.append(np.array(cropped_clip))
+    print(f'Found {len(cropped_clips)} valid clips')
+    
+    return cropped_clips, fps
+            
 # Run the Flask app
 if __name__ == '__main__':
     if not os.path.exists('uploads'):
         os.makedirs('uploads')  # Create an uploads folder if it doesn't exist
     app.run(debug=True)
+
+    # Test the process_video function
+    # with open('video-splitter/sample_vid.MOV', 'rb') as f:
+    #     video = f.read()
+    #     clips, fps = process_video(video, 6)
+    #     # save the clips as MOV files to uploads folder
+    #     save_clips_as_mp4('uploads', clips, base_name='clip', fps=fps)
+        
