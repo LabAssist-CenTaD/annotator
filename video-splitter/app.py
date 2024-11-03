@@ -12,7 +12,8 @@ import io
 app = Flask(__name__)
 CORS(app)  # Enable CORS to allow requests from your React app
 
-model = YOLO('video-splitter/models/obj_detect_best_v5.pt', verbose = False).cpu()
+# model = YOLO('video-splitter/models/obj_detect_best_v5.pt', verbose = False).cpu()
+model = YOLO('models/obj_detect_best_v5.pt', verbose = False).cpu()
 
 # Route to handle video uploads and annotation logic
 @app.route('/upload', methods=['POST']) 
@@ -23,11 +24,19 @@ def upload_video() -> Response:
     video = request.files['video']
     video_name = video.filename
     print(video_name)
+
     # Read the video file as bytes
     video_bytes = video.read()
     clips, fps = process_video(video_bytes, 6)
+
+    # Generate file paths for the saved clips
+    clip_paths = []
     if save_clips_as_mp4('uploads', clips, base_name=video_name[:-4], fps=fps):
-        return jsonify({'message': 'Flask: Video processed successfully'}), 200
+        # Create paths based on the specified naming convention
+        for i in range(len(clips)):
+            clip_path = os.path.join('uploads', f'{video_name[:-4]}_{i}.mp4')  # Adjusted naming format
+            clip_paths.append(clip_path)
+        return jsonify({'message': 'Flask: Video processed successfully', 'clip_paths': clip_paths}), 200
     else:
         return jsonify({'error': 'Flask: Error processing video'}), 500
     

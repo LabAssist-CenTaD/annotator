@@ -3,3 +3,4 @@ ultralytics
 flask
 Flask-Cors
 requests
+opencv-python

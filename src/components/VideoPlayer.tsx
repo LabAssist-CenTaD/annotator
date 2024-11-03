@@ -114,7 +114,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           ref={fileInputRef}
           onChange={handleFileUpload}
           style={{ display: "none" }} // Hide the file input
-          accept="video/mp4" // Optional: limit to mp4 files
+          // accept="video/mp4" // Optional: limit to mp4 files
         />
         <Button color="blue" keyBind="l" onClick={logVideoTimestamp}>
           <b>L</b> Log Video Timestamp
