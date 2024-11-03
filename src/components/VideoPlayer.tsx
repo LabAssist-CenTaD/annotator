@@ -1,16 +1,15 @@
 import React, { useRef, useEffect, useState } from "react";
 import Button from "./Button";
-import axios, { AxiosError, isAxiosError } from "axios"; // Import AxiosError and isAxiosError from the correct path
+import axios, { AxiosError, isAxiosError } from "axios";
 
 interface VideoPlayerProps {
   videoUrl: string | null;
-  onVideoUrlChange: (url: string | null) => void; // Prop to handle video URL change
+  onVideoUrlChange: (url: string | null) => void;
 }
 
-// Define the expected structure of the response from the Flask server
-interface FlaskResponse {
-  message?: string; // Message from the server
-  error?: string; // Error message, if any
+interface UploadResponse {
+  message: string;
+  clip_paths: string[]; // Array of clip URLs
 }
 
 const VideoPlayer: React.FC<VideoPlayerProps> = ({
@@ -18,14 +17,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   onVideoUrlChange,
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null); // Ref for file input
-  const [selectedFile, setSelectedFile] = useState<File | null>(null); // State to hold the selected file
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Clean up URL when video URL changes
   useEffect(() => {
     return () => {
       if (videoUrl) {
-        URL.revokeObjectURL(videoUrl); // Release the object URL
+        URL.revokeObjectURL(videoUrl);
       }
     };
   }, [videoUrl]);
@@ -34,11 +33,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (files && files[0]) {
-      const file = files[0]; // Get the selected file
-      const url = URL.createObjectURL(file); // Create a URL for the uploaded file
-      setSelectedFile(file); // Store the selected file for later
-      onVideoUrlChange(url); // Call the prop function to update the video URL
-      console.log("Uploaded file:", file.name); // Log the file name
+      const file = files[0];
+      const url = URL.createObjectURL(file);
+      setSelectedFile(file);
+      onVideoUrlChange(url);
+      console.log("Uploaded file:", file.name);
     }
   };
 
@@ -53,7 +52,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     formData.append("video", selectedFile);
 
     try {
-      const response = await axios.post<FlaskResponse>(
+      const response = await axios.post<UploadResponse>(
         "http://localhost:5000/upload",
         formData,
         {
@@ -62,15 +61,29 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           },
         }
       );
+
       console.log("Response from Flask:", response.data);
-      alert(response.data.message || "File sent successfully!"); // Display success message from Flask
+      alert(response.data.message || "File sent successfully!");
+
+      // Update the video URL to the first clip if available
+      if (response.data.clip_paths && response.data.clip_paths.length > 0) {
+        const newVideoUrl = `http://localhost:5000/${response.data.clip_paths[0]}`;
+        onVideoUrlChange(newVideoUrl); // Set videoUrl to the first clip
+        if (videoRef.current) {
+          videoRef.current.src = newVideoUrl; // Update the source directly
+          videoRef.current.load(); // Load the new video source
+          videoRef.current.play(); // Attempt to play the video automatically
+        }
+      } else {
+        alert("No clips were generated.");
+      }
     } catch (error) {
       console.error("Error sending file to Flask:", error);
-      const axiosError = error as AxiosError; // Cast to AxiosError
+      const axiosError = error as AxiosError;
       const errorMessage =
         isAxiosError(axiosError) && axiosError.response?.data?.error
           ? axiosError.response.data.error
-          : "Failed to send file."; // Default error message
+          : "Failed to send file.";
       alert(errorMessage);
     }
   };
@@ -78,34 +91,26 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   // Function to log the current timestamp of the video
   const logVideoTimestamp = () => {
     if (videoRef.current) {
-      const currentTime = videoRef.current.currentTime; // Get the current playback time
+      const currentTime = videoRef.current.currentTime;
       console.log("Current Video Timestamp:", currentTime);
     }
   };
 
   return (
     <div>
-      <video
-        ref={videoRef}
-        width="640"
-        height="360"
-        controls
-        key={videoUrl} // Add key to force re-render on URL change
-      >
+      <video ref={videoRef} width="640" height="360" controls key={videoUrl}>
         {videoUrl ? (
           <source src={videoUrl} type="video/mp4" />
         ) : (
-          <source src="your-video-url.mp4" type="video/mp4" /> // Default video
+          <source src="your-video-url.mp4" type="video/mp4" />
         )}
-        Your browser does not support the video tag.
       </video>
 
       <div className="flex flex-row justify-center items-center mt-2 space-x-2">
-        {/* Flexbox for buttons */}
         <Button
           color="blue"
           keyBind="u"
-          onClick={() => fileInputRef.current?.click()} // Trigger file input click
+          onClick={() => fileInputRef.current?.click()}
         >
           <b>U</b> Upload
         </Button>
@@ -113,8 +118,8 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
           type="file"
           ref={fileInputRef}
           onChange={handleFileUpload}
-          style={{ display: "none" }} // Hide the file input
-          // accept="video/mp4" // Optional: limit to mp4 files
+          style={{ display: "none" }}
+          accept="video/mp4"
         />
         <Button color="blue" keyBind="l" onClick={logVideoTimestamp}>
           <b>L</b> Log Video Timestamp

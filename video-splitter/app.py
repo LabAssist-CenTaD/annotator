@@ -1,5 +1,5 @@
 from ultralytics.models.yolo import YOLO
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response, send_from_directory
 from flask_cors import CORS
 from object_detector import pad_and_resize, predict_on_clips, get_valid_flask, square_crop, save_clips_as_mp4, extract_clips
 import numpy as np
@@ -11,6 +11,10 @@ import io
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS to allow requests from your React app
+
+@app.route('/uploads/<path:filename>', methods=['GET'])
+def serve_video(filename):
+    return send_from_directory('uploads', filename, mimetype='video/mp4')
 
 # model = YOLO('video-splitter/models/obj_detect_best_v5.pt', verbose = False).cpu()
 model = YOLO('models/obj_detect_best_v5.pt', verbose = False).cpu()
@@ -34,8 +38,11 @@ def upload_video() -> Response:
     if save_clips_as_mp4('uploads', clips, base_name=video_name[:-4], fps=fps):
         # Create paths based on the specified naming convention
         for i in range(len(clips)):
-            clip_path = os.path.join('uploads', f'{video_name[:-4]}_{i}.mp4')  # Adjusted naming format
+            clip_path = os.path.join('uploads', f'{video_name[:-4]}_{i}.mp4').replace('\\', '/')
+            if not os.path.exists(clip_path):
+                print(f"Clip not found: {clip_path}")  # Log if the file doesn't exist
             clip_paths.append(clip_path)
+            print(f"Clip saved at: {clip_path}")
         return jsonify({'message': 'Flask: Video processed successfully', 'clip_paths': clip_paths}), 200
     else:
         return jsonify({'error': 'Flask: Error processing video'}), 500
