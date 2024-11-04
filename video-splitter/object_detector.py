@@ -137,7 +137,7 @@ def save_clips_as_mp4(save_dir: str, clips: list[np.ndarray], base_name: str = '
             continue
 
         # Define the codec and create VideoWriter object
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        fourcc = cv2.VideoWriter_fourcc(*'avc1')
         frame_size = (clip[0].shape[1], clip[0].shape[0])  # Width and height of the frames
 
         out = cv2.VideoWriter(f'uploads/{base_name}_{i}.mp4', fourcc, fps, frame_size)

@@ -1,143 +1,95 @@
-import React, { useRef, useEffect, useState } from "react";
-import Button from "./Button";
-import axios, { AxiosError, isAxiosError } from "axios";
+import React, { useRef, useState, useEffect } from 'react';
+import UploadButton from './UploadButton';
+import axios from 'axios';
+import Button from './Button';
 
 interface VideoPlayerProps {
   videoUrl: string | null;
   onVideoUrlChange: (url: string | null) => void;
 }
 
-interface UploadResponse {
-  message: string;
-  clip_paths: string[]; // Array of clip URLs
+interface VideoList {
+  new_tasks: string[];
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({
-  videoUrl,
-  onVideoUrlChange,
-}) => {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+const VideoPlayer: React.FC<VideoPlayerProps> = () => {
+  const [videoUrl, setVideoUrl] = useState<string>('');
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoList, setVideoList] = useState<string[]>([]);
+  const [videoBuffer, setVideoBuffer] = useState<Map<string, string>>(new Map());
 
-  // Clean up URL when video URL changes
   useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.addEventListener('ended', playNextVideo);
+    }
     return () => {
-      if (videoUrl) {
-        URL.revokeObjectURL(videoUrl);
+      if (videoRef.current) {
+        videoRef.current.removeEventListener('ended', playNextVideo);
       }
     };
-  }, [videoUrl]);
+  }, [videoList, videoBuffer]);
 
-  // Function to handle file selection
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files[0]) {
-      const file = files[0];
-      const url = URL.createObjectURL(file);
-      setSelectedFile(file);
-      onVideoUrlChange(url);
-      console.log("Uploaded file:", file.name);
-    }
-  };
-
-  // Function to send the file to the Flask backend
-  const sendFileToPython = async () => {
-    if (!selectedFile) {
-      alert("No file selected!");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("video", selectedFile);
-
+  const requestVideoList = async () => {
     try {
-      const response = await axios.post<UploadResponse>(
-        "http://localhost:5000/upload",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
-      console.log("Response from Flask:", response.data);
-      alert(response.data.message || "File sent successfully!");
-
-      // Fetch the first clip as byte data
-      if (response.data.clip_paths && response.data.clip_paths.length > 0) {
-        const clipName = response.data.clip_paths[0].split("/").pop(); // Extract only the clip name
-        const clipResponse = await axios.get(
-          `http://localhost:5000/get_clip_data/${clipName}`,
-          {
-            responseType: "blob",
-          }
-        );
-
-        const videoBlob = new Blob([clipResponse.data as BlobPart], { type: "video/mp4" });
-        const newVideoUrl = URL.createObjectURL(videoBlob);
-
-        onVideoUrlChange(newVideoUrl); // Set videoUrl to the new blob URL
-        if (videoRef.current) {
-          videoRef.current.src = newVideoUrl; // Update the source directly
-          videoRef.current.load(); // Load the new video source
-          videoRef.current.play(); // Attempt to play the video automatically
-        }
-      } else {
-        alert("No clips were generated.");
-      }
+      const response = await axios.get<VideoList>('http://localhost:5000/get_new_tasks');
+      setVideoList(response.data['new_tasks']);
+      preloadVideos(response.data['new_tasks']);
     } catch (error) {
-      console.error("Error sending file to Flask:", error);
-      const axiosError = error as AxiosError;
-      const errorMessage =
-        isAxiosError(axiosError) && axiosError.response?.data?.error
-          ? axiosError.response.data.error
-          : "Failed to send file.";
-      alert(errorMessage);
+      console.error('Error fetching video list:', error);
     }
   };
 
-  // Function to log the current timestamp of the video
-  const logVideoTimestamp = () => {
-    if (videoRef.current) {
-      const currentTime = videoRef.current.currentTime;
-      console.log("Current Video Timestamp:", currentTime);
+  const preloadVideos = async (videoNames: string[]) => {
+    const buffer = new Map<string, string>();
+    for (const videoName of videoNames) {
+      axios.get(`http://localhost:5000/videos/${videoName}`, {
+        responseType: 'blob',
+      }).then((response) => {
+        console.log(response.data); 
+        // const videoBlob = new Blob([response.data as BlobPart], { type: 'video/mp4' });
+        const videoUrl = URL.createObjectURL(response.data as Blob);
+        videoRef.current!.src = videoUrl;
+        videoRef.current!.load();
+        videoRef.current!.play();
+        console.log(`Preloaded video ${videoName}:`, videoUrl);
+        buffer.set(videoName, videoUrl);
+      }).catch((error) => {
+        console.error(`Error preloading video ${videoName}:`, error);
+      });
     }
+    setVideoBuffer(buffer);
+  };
+
+  const playNextVideo = () => {
+    if (videoList.length > 0) {
+      const nextVideoName = videoList.shift();
+      if (nextVideoName && videoBuffer.has(nextVideoName)) {
+        const nextVideoUrl = videoBuffer.get(nextVideoName);
+        if (nextVideoUrl) {
+          setVideoUrl(nextVideoUrl);
+          if (videoRef.current) {
+            console.log('Playing next video:', nextVideoName);
+            videoRef.current.src = nextVideoUrl;
+            videoRef.current.load();
+            videoRef.current.play();
+          }
+        }
+      }
+    }
+  };
+
+  const handleVideoUrlChange = (url: string) => {
+    setVideoUrl(url);
   };
 
   return (
     <div>
-      <video ref={videoRef} width="640" height="360" controls key={videoUrl}>
-        {videoUrl ? (
-          <source src={videoUrl} type="video/mp4" />
-        ) : (
-          <source src="your-video-url.mp4" type="video/mp4" />
-        )}
+      <Button color="blue" keyBind="1" onClick={requestVideoList}>Update</Button>
+      <UploadButton onVideoUrlChange={handleVideoUrlChange} videoRef={videoRef} />
+      <video ref={videoRef} controls>
+        <source src={videoUrl} type="video/mp4" />
+        Your browser does not support the video tag.
       </video>
-
-      <div className="flex flex-row justify-center items-center mt-2 space-x-2">
-        <Button
-          color="blue"
-          keyBind="u"
-          onClick={() => fileInputRef.current?.click()}
-        >
-          <b>U</b> Upload
-        </Button>
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileUpload}
-          style={{ display: "none" }}
-          accept="video/mp4"
-        />
-        <Button color="blue" keyBind="l" onClick={logVideoTimestamp}>
-          <b>L</b> Log Video Timestamp
-        </Button>
-        <Button color="green" onClick={sendFileToPython}>
-          Send File to Python
-        </Button>
-      </div>
     </div>
   );
 };
