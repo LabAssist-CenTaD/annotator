@@ -6,7 +6,7 @@ class Annotator:
     def __init__(self, database: str = None, config: str = None):
         self.database_path = database
         if os.path.exists(database):
-            self.database = pd.read_csv(database)
+            self.database = pd.read_csv('database.csv', delimiter=',')
         else:
             self.database = pd.DataFrame(columns=['video_name', 'label'], dtype=str)
         self.config_path = config
@@ -28,7 +28,7 @@ class Annotator:
             json.dump(self.config, f)
         
     def load(self):
-        self.database = pd.read_csv(self.database)
+        self.database = pd.read_csv('database.csv', delimiter=',')
         with open(self.config_path, 'r') as f:
             self.config = json.load(f)
             
