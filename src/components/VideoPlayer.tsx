@@ -34,8 +34,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = () => {
 
   const requestVideoList = async () => {
     try {
-      const response = await axios.get<VideoList>(
-        "http://localhost:5000/get_new_tasks"
+      const response = await axios.post<VideoList>(
+        "http://localhost:5000/get_new_tasks",
+        {
+          num_clips: 5,
+        }
       );
       setVideoList(response.data["new_tasks"]);
       preloadVideos(response.data["new_tasks"]);

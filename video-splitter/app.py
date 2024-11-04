@@ -56,7 +56,7 @@ def upload_video() -> Response:
     
 # New endpoint to serve video clips as byte data
 @app.route('/videos/<clip_name>', methods=['GET'])
-def get_clip_data(clip_name):
+def get_clip_data(clip_name) -> Response:
     clip_path = os.path.join('uploads', clip_name)
     if not os.path.exists(clip_path):
         return jsonify({'error': 'Flask: Clip not found'}), 404
@@ -64,14 +64,16 @@ def get_clip_data(clip_name):
         clip_data = f.read()
     return Response(clip_data, mimetype='video/mp4', content_type='video/mp4', direct_passthrough=True, headers={'Content-Disposition': f'attachment; filename={clip_name}'})
 
-@app.route('/get_new_tasks', methods=['GET'])
-def get_new_task():
-    new_tasks = annotator.get_new_task(5)
+@app.route('/get_new_tasks', methods=['POST'])
+def get_new_task() -> Response:
+    if 'num_clips' not in request.json:
+        return jsonify({'error': 'Flask: Number of clips not specified'}), 400
+    new_tasks = annotator.get_new_task(int(request.json['num_clips']))
     if new_tasks is None:
         return jsonify({'error': 'Flask: No new tasks available'}), 404
     return jsonify({'new_tasks': new_tasks}), 200
     
-def process_video(video:bytes | str, interval:int):
+def process_video(video:bytes | str, interval:int) -> tuple[list[np.ndarray], float]:
     # reads the video and separates it into clips of interval seconds. Crops the videos based on the object detection model
     extracted_clips, fps = extract_clips(video, interval, transform=pad_and_resize)
     
