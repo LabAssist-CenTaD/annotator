@@ -20,6 +20,8 @@ class Annotator:
                 'uploads_folder': None
             }
             
+        self.save()
+            
     def save(self):
         self.database.to_csv(self.database_path, index=False)
         with open(self.config_path, 'w') as f:
