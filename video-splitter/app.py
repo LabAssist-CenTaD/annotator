@@ -17,8 +17,8 @@ CORS(app)  # Enable CORS to allow requests from your React app
 def serve_video(filename):
     return send_from_directory('uploads', filename, mimetype='video/mp4')
 
+model = YOLO('models/obj_detect_best_v5.pt', verbose = False).cpu()
 # model = YOLO('video-splitter/models/obj_detect_best_v5.pt', verbose = False).cpu()
-model = YOLO('video-splitter/models/obj_detect_best_v5.pt', verbose = False).cpu()
 
 # Initialize the Annotator class
 annotator = Annotator('database.csv', 'config.json')
