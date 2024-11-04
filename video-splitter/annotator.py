@@ -23,7 +23,12 @@ class Annotator:
         self.save()
             
     def save(self):
-        self.database.to_csv(self.database_path, index=False)
+        # if database is empty, use f.write() instead of to_csv()
+        if len(self.database) == 0:
+            with open(self.database_path, 'w') as f:
+                f.write('video_name,label\n')
+        else:
+            self.database.to_csv(self.database_path, index=False, header=True)
         with open(self.config_path, 'w') as f:
             json.dump(self.config, f)
         
@@ -84,3 +89,8 @@ class Annotator:
             self.database.loc[self.database['video_name'] == self.config['saved_tasks'][-1], 'label'] = None
             self.config['saved_tasks'] = self.config['saved_tasks'][:-1]
             self.save()
+            
+if __name__ == '__main__':
+    annotator = Annotator('database.csv', 'config.json')
+    annotator.set_uploads_folder('uploads')
+    annotator.update_database()
