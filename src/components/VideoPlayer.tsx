@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import UploadButton from "./UploadButton";
 import axios from "axios";
 import Button from "./Button";
@@ -20,6 +20,23 @@ const VideoPlayer: React.FC<VideoPlayerProps> = () => {
         new Map()
     );
 
+    // Callback to play the next video in the list
+    const playNextVideo = useCallback(() => {
+        if (videoList.length > 0) {
+            const nextVideoName = videoList[0];
+            const nextVideoUrl = videoBuffer.get(nextVideoName);
+            if (nextVideoUrl) {
+                setVideoUrl(nextVideoUrl);
+                setVideoList((prevList) => prevList.slice(1));
+                if (videoRef.current) {
+                    videoRef.current.src = nextVideoUrl;
+                    videoRef.current.load();
+                    videoRef.current.play();
+                }
+            }
+        }
+    }, [videoList, videoBuffer]);
+
     useEffect(() => {
         const videoElement = videoRef.current;
         if (videoElement) {
@@ -30,15 +47,16 @@ const VideoPlayer: React.FC<VideoPlayerProps> = () => {
                 videoElement.removeEventListener("ended", playNextVideo);
             }
         };
-    }, [videoList, videoBuffer]);
+    }, [playNextVideo]);
 
     const requestVideoList = async () => {
         try {
             const response = await axios.get<VideoList>(
                 "http://localhost:5000/get_new_tasks"
             );
-            setVideoList(response.data["new_tasks"]);
-            preloadVideos(response.data["new_tasks"]);
+            const tasks = response.data["new_tasks"];
+            setVideoList(tasks);
+            preloadVideos(tasks);
         } catch (error) {
             console.error("Error fetching video list:", error);
         }
@@ -47,46 +65,20 @@ const VideoPlayer: React.FC<VideoPlayerProps> = () => {
     const preloadVideos = async (videoNames: string[]) => {
         const buffer = new Map<string, string>();
         for (const videoName of videoNames) {
-            axios
-                .get(`http://localhost:5000/videos/${videoName}`, {
-                    responseType: "blob",
-                })
-                .then((response) => {
-                    console.log(response.data);
-                    // const videoBlob = new Blob([response.data as BlobPart], { type: 'video/mp4' });
-                    const videoUrl = URL.createObjectURL(response.data as Blob);
-                    videoRef.current!.src = videoUrl;
-                    videoRef.current!.load();
-                    videoRef.current!.play();
-                    console.log(`Preloaded video ${videoName}:`, videoUrl);
-                    buffer.set(videoName, videoUrl);
-                })
-                .catch((error) => {
-                    console.error(
-                        `Error preloading video ${videoName}:`,
-                        error
-                    );
-                });
-        }
-        setVideoBuffer(buffer);
-    };
-
-    const playNextVideo = () => {
-        if (videoList.length > 0) {
-            const nextVideoName = videoList.shift();
-            if (nextVideoName && videoBuffer.has(nextVideoName)) {
-                const nextVideoUrl = videoBuffer.get(nextVideoName);
-                if (nextVideoUrl) {
-                    setVideoUrl(nextVideoUrl);
-                    if (videoRef.current) {
-                        console.log("Playing next video:", nextVideoName);
-                        videoRef.current.src = nextVideoUrl;
-                        videoRef.current.load();
-                        videoRef.current.play();
+            try {
+                const response = await axios.get(
+                    `http://localhost:5000/videos/${videoName}`,
+                    {
+                        responseType: "blob",
                     }
-                }
+                );
+                const videoUrl = URL.createObjectURL(response.data as Blob);
+                buffer.set(videoName, videoUrl);
+            } catch (error) {
+                console.error(`Error preloading video ${videoName}:`, error);
             }
         }
+        setVideoBuffer(buffer);
     };
 
     const handleVideoUrlChange = (url: string) => {
