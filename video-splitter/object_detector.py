@@ -56,7 +56,7 @@ def extract_clips(video, interval: int, transform = None):
             frames.append(frame)
         if len(frames) == interval * int(fps):
             extracted_clips.append(np.array(frames))
-    print()
+    print('/nDetecting valid clips')
     cap.release()
     cv2.destroyAllWindows()
     return extracted_clips, fps
@@ -140,7 +140,7 @@ def save_clips_as_mp4(save_dir: str, clips: list[np.ndarray], base_name: str = '
         fourcc = cv2.VideoWriter_fourcc(*'avc1')
         frame_size = (clip[0].shape[1], clip[0].shape[0])  # Width and height of the frames
 
-        out = cv2.VideoWriter(f'uploads/{base_name}_{i}.mp4', fourcc, fps, frame_size)
+        out = cv2.VideoWriter(f'{save_dir}/{base_name}_{i}.mp4', fourcc, fps, frame_size)
 
         for frame in clip:
             # Ensure the frame is in the correct color format (BGR for OpenCV)

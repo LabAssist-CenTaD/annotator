@@ -6,7 +6,7 @@ class Annotator:
     def __init__(self, database: str = None, config: str = None):
         self.database_path = database
         if os.path.exists(database):
-            self.database = pd.read_csv('database.csv', delimiter=',')
+            self.database = pd.read_csv(self.database_path, delimiter=',')
         else:
             self.database = pd.DataFrame(columns=['video_name', 'label'], dtype=str)
         self.config_path = config
@@ -39,7 +39,7 @@ class Annotator:
             
     def set_uploads_folder(self, folder: str):
         if not os.path.exists(folder):
-            raise FileNotFoundError('Folder does not exist')
+            os.makedirs(folder)
         self.config['uploads_folder'] = folder
         self.save()
         
@@ -50,7 +50,8 @@ class Annotator:
                 if video not in self.database['video_name'].tolist():
                     self.database.loc[len(self.database)] = [video, None]
         # remove videos that are not in the uploads folder
-        self.database = self.database[self.database['video_name'].apply(lambda x: os.path.exists(os.path.join(self.config['uploads_folder'], x)))]
+        if len(self.database) > 0:
+            self.database = self.database[self.database['video_name'].apply(lambda x: os.path.exists(os.path.join(self.config['uploads_folder'], x)))]
         self.save()
         
     def add_tasks(self, tasks: str | list):
