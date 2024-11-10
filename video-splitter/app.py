@@ -35,7 +35,7 @@ def upload_video() -> Response:
 
     video = request.files['video']
     video_name = video.filename
-    print(video_name)
+    print(f"Receieved {video_name}")
 
     # Read the video file as bytes
     video_bytes = video.read()
