@@ -1,5 +1,5 @@
 video_name,label
 sample_vid_0.mp4,Correct
 sample_vid_1.mp4,Correct
-sample_vid_2.mp4,
-sample_vid_3.mp4,
+sample_vid_2.mp4,Incorrect
+sample_vid_3.mp4,Stationary
